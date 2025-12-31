@@ -3,7 +3,16 @@ import { GoogleGenAI, Modality, GenerateContentResponse } from "@google/genai";
 import { blobToBase64 } from "./audioService";
 import { EnglishLevel, LanguageGoal, PracticeMode } from "../types";
 
-const API_KEY = process.env.API_KEY || "";
+// Safe access to environment variables
+const getApiKey = () => {
+  try {
+    return (typeof process !== 'undefined' && process.env?.API_KEY) || "";
+  } catch (e) {
+    return "";
+  }
+};
+
+const API_KEY = getApiKey();
 
 export class GeminiTutorService {
   private ai: GoogleGenAI;
@@ -96,6 +105,7 @@ export class GeminiTutorService {
   }
 
   async sendMessage(text: string): Promise<string> {
+    if (!this.chat) this.initChat();
     const response = await this.chat.sendMessage({ message: text });
     return response.text || "";
   }
