@@ -64,7 +64,10 @@ export class GeminiTutorService {
     4. Keep your responses short (2-3 sentences max) so they are suitable for voice playback.
     5. If the user makes a mistake, explain it briefly in ${tutorLang}.
     
-    Output format: Provide your response in plain text. Do not use complex markdown.`;
+    IMPORTANT: You will receive audio input. 
+    First, transcribe the user's speech exactly. 
+    Then, provide your response.
+    Format: [TRANSCRIPTION] (Your transcription here) [RESPONSE] (Your response here).`;
 
     this.chat = this.ai.chats.create({
       model: 'gemini-3-flash-preview',
@@ -83,25 +86,30 @@ export class GeminiTutorService {
   }
 
   async processAudio(audioBlob: Blob): Promise<string> {
-    const base64Audio = await blobToBase64(audioBlob);
-    const tutorLang = this.targetLanguage === 'English' ? 'English' : 'Russian';
-    
-    const response = await this.ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              mimeType: audioBlob.type,
-              data: base64Audio,
+    try {
+      const base64Audio = await blobToBase64(audioBlob);
+      const tutorLang = this.targetLanguage === 'English' ? 'English' : 'Russian';
+      
+      const response = await this.ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: audioBlob.type.split(';')[0], // Use clean mime type
+                data: base64Audio,
+              },
             },
-          },
-          { text: `Transcribe exactly what I said in ${tutorLang}, and then respond as my ${tutorLang} tutor. Separate your transcription from your response with a marker [RESPONSE].` }
-        ],
-      },
-    });
+            { text: `Please transcribe my ${tutorLang} speech and respond to it. Use the format: [TRANSCRIPTION] text [RESPONSE] text.` }
+          ],
+        },
+      });
 
-    return response.text || "";
+      return response.text || "";
+    } catch (error: any) {
+      console.error("Gemini Audio Processing Error:", error);
+      throw new Error(error.message || "Failed to process audio");
+    }
   }
 
   async sendMessage(text: string): Promise<string> {
@@ -111,20 +119,25 @@ export class GeminiTutorService {
   }
 
   async getSpeech(text: string): Promise<string> {
-    const response = await this.ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Say naturally and clearly: ${text}` }] }],
-      config: {
-        responseModalities: [Modality.AUDIO],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Kore' },
+    try {
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ parts: [{ text: `Say naturally: ${text}` }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Kore' },
+            },
           },
         },
-      },
-    });
+      });
 
-    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
+      return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
+    } catch (error) {
+      console.warn("TTS Failed:", error);
+      return "";
+    }
   }
 }
 
