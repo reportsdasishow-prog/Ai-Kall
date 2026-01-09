@@ -11,7 +11,7 @@ export class GeminiTutorService {
 
   private getAI() {
     // The API key is obtained exclusively from the environment variable process.env.API_KEY.
-    return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    return new GoogleGenAI({ apiKey: process.env.API_KEY || "AIzaSyDYVlayf2J-2D7quW9vruPs5tdHDveukcM" });
   }
 
   private getSystemInstruction() {
