@@ -11,7 +11,7 @@ export class GeminiTutorService {
 
   private getAI() {
     // The API key is obtained exclusively from the environment variable process.env.API_KEY.
-    return new GoogleGenAI({ apiKey: process.env.API_KEY || "AIzaSyDYVlayf2J-2D7quW9vruPs5tdHDveukcM" });
+    return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
   }
 
   private getSystemInstruction() {
@@ -49,12 +49,7 @@ export class GeminiTutorService {
     1. Listen to the user's spoken or written input.
     2. Politely correct any grammatical errors or awkward phrasing relative to their level.
     3. Maintain an encouraging conversation.
-    4. Keep your responses short (max 3 sentences) for voice playback.
-    
-    IMPORTANT: When processing audio, you must provide both a transcription of what you heard and your response.
-    Format your entire response exactly like this:
-    [TRANSCRIPTION] (what you heard the user say)
-    [RESPONSE] (your correction and reply to the user)`;
+    4. Keep your responses short (max 3 sentences) for voice playback.`;
   }
 
   startSession(level: EnglishLevel, targetLanguage: LanguageGoal, mode: PracticeMode, scenario: string = '') {
@@ -80,7 +75,7 @@ export class GeminiTutorService {
                 data: base64Audio,
               },
             },
-            { text: "Please transcribe my speech and respond to it using the [TRANSCRIPTION] and [RESPONSE] format." }
+            { text: "Transcribe the audio and respond. Output strictly in this format: [TRANSCRIPTION] text [RESPONSE] text" }
           ],
         },
       ],

@@ -64,6 +64,14 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, { id: Math.random().toString(36).substring(7), role, text, timestamp: new Date() }]);
   };
 
+  const cleanResponse = (text: string) => {
+    // Helper to strip tags if they appear
+    if (text.includes('[RESPONSE]')) {
+      return text.split('[RESPONSE]')[1].trim();
+    }
+    return text.replace(/\[TRANSCRIPTION\]|\[RESPONSE\]/g, '').trim();
+  };
+
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return setAuthError('Please fill in all fields');
@@ -124,7 +132,8 @@ const App: React.FC = () => {
     setProcessingStatus('Thinking...');
     
     try {
-      const result = await tutorService.sendMessage(userText);
+      const rawResult = await tutorService.sendMessage(userText);
+      const result = cleanResponse(rawResult);
       addMessage(Role.TUTOR, result);
       await playResponse(result);
     } catch (err) {
@@ -166,6 +175,9 @@ const App: React.FC = () => {
             const parts = result.split('[RESPONSE]');
             trans = parts[0].replace('[TRANSCRIPTION]', '').trim();
             resp = parts[1].trim();
+          } else {
+            // Fallback cleanup if strict format failed
+            resp = cleanResponse(result);
           }
 
           addMessage(Role.USER, trans);
